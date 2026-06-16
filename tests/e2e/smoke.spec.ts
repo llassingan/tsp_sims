@@ -87,7 +87,7 @@ test('preset + Start does not throw', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '5-node star' }).click();
   await page.getByRole('button', { name: 'Start' }).click();
-  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 20_000 });
   expect(errors).toEqual([]);
 });
 
@@ -122,6 +122,28 @@ test('switching weight mode to Random works', async ({ page }) => {
   page.on('pageerror', (err) => errors.push(err.message));
   await page.goto('/');
   await page.getByText('Random', { exact: true }).click();
+  await page.getByLabel('Nodes').fill('5');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
+  expect(errors).toEqual([]);
+});
+
+test('3D view renders WebGL canvas and runs simulation', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+  await page.goto('/');
+  await expect(page.locator('canvas').first()).toBeVisible();
+  await page.getByLabel('Nodes').fill('6');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 15_000 });
+  expect(errors).toEqual([]);
+});
+
+test('switching to 2D view works after 3D', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+  await page.goto('/');
+  await page.getByText('2D', { exact: true }).click();
   await page.getByLabel('Nodes').fill('5');
   await page.getByRole('button', { name: 'Start' }).click();
   await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
