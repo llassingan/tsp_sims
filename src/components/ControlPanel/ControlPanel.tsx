@@ -8,6 +8,7 @@ import { WeightModeSelect } from './WeightModeSelect';
 import { SeedInput } from './SeedInput';
 import { PresetButtons } from './PresetButtons';
 import { StartButton } from './StartButton';
+import { ViewModeSelect } from './ViewModeSelect';
 
 export function ControlPanel(): JSX.Element {
   return (
@@ -21,6 +22,7 @@ export function ControlPanel(): JSX.Element {
       <WeightModeSelect />
       <WeightRangeInput />
       <SeedInput />
+      <ViewModeSelect />
       <PresetButtons />
       <div className="mt-2">
         <StartButton />

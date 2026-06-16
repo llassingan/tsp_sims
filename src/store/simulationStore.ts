@@ -15,6 +15,7 @@ export interface SimulationConfig {
   weightMax: number;
   seed: number;
   weightMode: WeightMode;
+  viewMode: '2d' | '3d';
 }
 
 export interface SimulationState {
@@ -80,6 +81,7 @@ const initialState: Omit<
     weightMax: 20,
     seed: 42,
     weightMode: 'euclidean',
+    viewMode: '3d',
   },
   graph: null,
   status: 'idle',

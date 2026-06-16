@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
 import { GraphCanvas } from './components/GraphVisualizer/GraphCanvas';
 import { StatusOverlay } from './components/GraphVisualizer/StatusOverlay';
@@ -6,11 +7,16 @@ import { useRunOrchestrator } from './hooks/useRunOrchestrator';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSimulationStore } from './store/simulationStore';
 
+const GraphCanvas3D = lazy(() =>
+  import('./components/GraphVisualizer/GraphCanvas3D').then((m) => ({ default: m.GraphCanvas3D })),
+);
+
 export default function App(): JSX.Element {
   useRunOrchestrator();
   useKeyboardShortcuts();
   const status = useSimulationStore((s) => s.status);
   const error = useSimulationStore((s) => s.error);
+  const viewMode = useSimulationStore((s) => s.config.viewMode);
   return (
     <div className="grid h-screen grid-cols-[320px_1fr_360px] grid-rows-[48px_1fr] bg-gray-50">
       <header className="col-span-3 flex items-center justify-between border-b border-gray-200 bg-white px-4">
@@ -34,7 +40,13 @@ export default function App(): JSX.Element {
         <ControlPanel />
       </aside>
       <main className="relative overflow-hidden bg-white">
-        <GraphCanvas />
+        {viewMode === '3d' ? (
+          <Suspense fallback={<GraphCanvas />}>
+            <GraphCanvas3D />
+          </Suspense>
+        ) : (
+          <GraphCanvas />
+        )}
         <StatusOverlay />
         {error ? (
           <div
