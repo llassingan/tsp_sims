@@ -101,3 +101,29 @@ test('nearest neighbor on n=15 (force layout) does not throw', async ({ page }) 
   await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
   expect(errors).toEqual([]);
 });
+
+test('canvas renders weight labels on edges (euclidean mode)', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+  await page.goto('/');
+  await page.getByLabel('Nodes').fill('6');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
+  const canvas = page.locator('canvas').first();
+  const box = await canvas.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box?.width ?? 0).toBeGreaterThan(100);
+  expect(box?.height ?? 0).toBeGreaterThan(100);
+  expect(errors).toEqual([]);
+});
+
+test('switching weight mode to Random works', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+  await page.goto('/');
+  await page.getByText('Random', { exact: true }).click();
+  await page.getByLabel('Nodes').fill('5');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
+  expect(errors).toEqual([]);
+});
