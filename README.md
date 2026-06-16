@@ -17,8 +17,8 @@ pnpm start        # serves built bundle on :14022 + health API on :14045
 ```
 
 Access via:
-- Frontend: `https://staging.mahara.web.id:14022`
-- API: `https://api-staging.mahara.web.id:14045/health`
+- Frontend: `https://localhost:14022`
+- API: `https://localhost:14045/health`
 
 ## Scripts
 

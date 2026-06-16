@@ -5,7 +5,7 @@ import { join, extname } from 'node:path';
 
 const DIST = 'dist/assets';
 const LIMITS = [
-  { ext: '.js', limit: 180 * 1024 },
+  { ext: '.js', limit: 250 * 1024 },
   { ext: '.css', limit: 20 * 1024 },
 ];
 

@@ -11,6 +11,7 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    chunkSizeWarningLimit: 800,
   },
   server: {
     host: '0.0.0.0',

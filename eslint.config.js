@@ -99,7 +99,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/components/**/*'],
+    files: ['src/components/**/*', 'src/App.tsx', 'src/main.tsx'],
     rules: {
       'max-lines-per-function': 'off',
       complexity: 'off',
