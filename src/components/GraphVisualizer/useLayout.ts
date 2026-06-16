@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   forceCenter,
   forceCollide,
@@ -118,14 +118,8 @@ export function useLayout(
   width: number,
   height: number,
 ): Layout {
-  const [size, setSize] = useState({ w: width, h: height });
-  useEffect(() => {
-    if (Math.abs(size.w - width) > 8 || Math.abs(size.h - height) > 8) {
-      setSize({ w: width, h: height });
-    }
-  }, [width, height, size]);
   return useMemo(() => {
     if (graph === null) return new Map();
-    return buildLayout(graph, Math.max(1, size.w), Math.max(1, size.h));
-  }, [graph, size.w, size.h]);
+    return buildLayout(graph, Math.max(1, width), Math.max(1, height));
+  }, [graph, width, height]);
 }
