@@ -1,0 +1,39 @@
+import { useSimulationStore } from '@/store/simulationStore';
+
+export function StatusOverlay(): JSX.Element | null {
+  const status = useSimulationStore((s) => s.status);
+  const bestCost = useSimulationStore((s) => s.bestCost);
+  const graph = useSimulationStore((s) => s.graph);
+
+  if (status === 'running' || status === 'error') {
+    return null;
+  }
+  if (graph === null) {
+    return (
+      <div className="pointer-events-none absolute inset-0 grid place-items-center">
+        <div className="rounded border border-gray-300 bg-white/90 px-4 py-2 text-sm text-gray-700 shadow-sm">
+          Click a preset or Start to generate a graph
+        </div>
+      </div>
+    );
+  }
+  if (status === 'ready') {
+    return (
+      <div className="pointer-events-none absolute inset-x-0 top-2 grid place-items-center">
+        <div className="rounded-full border border-tsp-bestTour bg-white/90 px-3 py-1 text-[11px] font-medium text-tsp-bestTour shadow-sm">
+          Ready — press Start or Space
+        </div>
+      </div>
+    );
+  }
+  if (status === 'completed' && bestCost !== null) {
+    return (
+      <div className="pointer-events-none absolute inset-x-0 top-2 grid place-items-center">
+        <div className="rounded-full border border-tsp-bestTour bg-white/90 px-3 py-1 text-[11px] font-medium text-tsp-bestTour shadow-sm">
+          Best cost: {bestCost}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
