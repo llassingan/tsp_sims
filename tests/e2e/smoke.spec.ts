@@ -149,3 +149,17 @@ test('switching to 2D view works after 3D', async ({ page }) => {
   await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
   expect(errors).toEqual([]);
 });
+
+test('3D best tour tube persists after 3D -> 2D -> 3D switch', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (err) => errors.push(err.message));
+  await page.goto('/');
+  await page.getByLabel('Nodes').fill('5');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed', { timeout: 10_000 });
+  await page.getByText('2D', { exact: true }).click();
+  await expect(page.locator('canvas').first()).toBeVisible();
+  await page.getByText('3D', { exact: true }).click();
+  await expect(page.getByTestId('status')).toHaveText('completed');
+  expect(errors).toEqual([]);
+});
