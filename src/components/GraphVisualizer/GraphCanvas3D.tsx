@@ -274,11 +274,6 @@ export function GraphCanvas3D(): JSX.Element {
       disposeObject(s.currentTourLine);
       s.currentTourLine = null;
     }
-    if (s.bestTourObject) {
-      s.group.remove(s.bestTourObject);
-      disposeObject(s.bestTourObject);
-      s.bestTourObject = null;
-    }
     if (currentTour.length >= 2) {
       const line = buildTourLineFromMap(currentTour, s.positions, EDGE_COLOR_CURRENT);
       if (line) {
@@ -286,14 +281,23 @@ export function GraphCanvas3D(): JSX.Element {
         s.currentTourLine = line;
       }
     }
-    if (bestTour && bestTour.length >= 2) {
-      const tube = buildBestTourTube(bestTour, s.positions, EDGE_COLOR_BEST);
-      if (tube) {
-        s.group.add(tube);
-        s.bestTourObject = tube;
-      }
-    }
   }, [currentTour, bestTour, visited, startNode, destNode, graph]);
+
+  useEffect(() => {
+    const s = sceneRef.current;
+    if (s === null || bestTour === null || bestTour.length < 2) return;
+    if (s.positions.size === 0) return;
+    if (s.bestTourObject) {
+      s.group.remove(s.bestTourObject);
+      disposeObject(s.bestTourObject);
+      s.bestTourObject = null;
+    }
+    const tube = buildBestTourTube(bestTour, s.positions, EDGE_COLOR_BEST);
+    if (tube) {
+      s.group.add(tube);
+      s.bestTourObject = tube;
+    }
+  }, [bestTour, graph, layout]);
 
   if (webglFailed) {
     return (
