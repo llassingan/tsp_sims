@@ -52,7 +52,7 @@ interface SceneState {
   sphereMeshes: THREE.Mesh[];
   edgeMeshes: THREE.Line[];
   currentTourLine: THREE.Line | null;
-  bestTourLine: THREE.Line | null;
+  bestTourObject: THREE.Object3D | null;
   positions: Map<number, NodePos>;
   labelCanvas: HTMLCanvasElement;
   labelCtx: CanvasRenderingContext2D;
@@ -176,7 +176,7 @@ export function GraphCanvas3D(): JSX.Element {
       sphereMeshes: [],
       edgeMeshes: [],
       currentTourLine: null,
-      bestTourLine: null,
+      bestTourObject: null,
       positions: new Map(),
       labelCanvas,
       labelCtx,
@@ -219,7 +219,7 @@ export function GraphCanvas3D(): JSX.Element {
     s.edgeMeshes.length = 0;
     s.positions.clear();
     s.currentTourLine = null;
-    s.bestTourLine = null;
+    s.bestTourObject = null;
 
     const layoutNow = layoutRef.current;
     for (let i = 0; i < graph.n; i++) {
@@ -274,10 +274,10 @@ export function GraphCanvas3D(): JSX.Element {
       disposeObject(s.currentTourLine);
       s.currentTourLine = null;
     }
-    if (s.bestTourLine) {
-      s.group.remove(s.bestTourLine);
-      disposeObject(s.bestTourLine);
-      s.bestTourLine = null;
+    if (s.bestTourObject) {
+      s.group.remove(s.bestTourObject);
+      disposeObject(s.bestTourObject);
+      s.bestTourObject = null;
     }
     if (currentTour.length >= 2) {
       const line = buildTourLineFromMap(currentTour, s.positions, EDGE_COLOR_CURRENT);
@@ -287,10 +287,10 @@ export function GraphCanvas3D(): JSX.Element {
       }
     }
     if (bestTour && bestTour.length >= 2) {
-      const line = buildTourLineFromMap(bestTour, s.positions, EDGE_COLOR_BEST);
-      if (line) {
-        s.group.add(line);
-        s.bestTourLine = line;
+      const tube = buildBestTourTube(bestTour, s.positions, EDGE_COLOR_BEST);
+      if (tube) {
+        s.group.add(tube);
+        s.bestTourObject = tube;
       }
     }
   }, [currentTour, bestTour, visited, startNode, destNode, graph]);
@@ -336,6 +336,31 @@ function buildTourLineFromMap(
   geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
   const mat = new THREE.LineBasicMaterial({ color, linewidth: 3 });
   return new THREE.Line(geom, mat);
+}
+
+const BEST_TUBE_RADIUS = 3.5;
+const BEST_TUBE_Z_OFFSET = 2;
+
+function buildBestTourTube(
+  tour: readonly number[],
+  positions: ReadonlyMap<number, NodePos>,
+  color: number,
+): THREE.Mesh | null {
+  if (tour.length < 2) return null;
+  const points: THREE.Vector3[] = [];
+  for (const nodeId of tour) {
+    if (nodeId === undefined) continue;
+    const pos = positions.get(nodeId);
+    if (!pos) continue;
+    points.push(new THREE.Vector3(pos.x, pos.y, pos.z + BEST_TUBE_Z_OFFSET));
+  }
+  if (points.length < 2) return null;
+  const isCycle = points.length > 2 && points[0]?.equals(points[points.length - 1] ?? new THREE.Vector3());
+  const curve = new THREE.CatmullRomCurve3(points, isCycle, 'catmullrom', 0.0);
+  const segments = Math.max(64, points.length * 8);
+  const geom = new THREE.TubeGeometry(curve, segments, BEST_TUBE_RADIUS, 10, isCycle);
+  const mat = new THREE.MeshBasicMaterial({ color });
+  return new THREE.Mesh(geom, mat);
 }
 
 interface NodeStateSnapshot {
