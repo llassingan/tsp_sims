@@ -1,0 +1,12 @@
+{
+  "entry": ["src/main.tsx", "src/workers/algorithm.worker.ts"],
+  "project": ["src/**/*.ts", "src/**/*.tsx"],
+  "ignore": [
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "tests/**",
+    "*.config.ts",
+    "*.config.js",
+    "server/**"
+  ]
+}
