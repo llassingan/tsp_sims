@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSimulationStore } from '@/store/simulationStore';
+import { cost, type Graph } from '@/lib/graph/types';
 import { useLayout, type Layout } from './useLayout';
 
 const COLORS = {
-  nodeStroke: '#000000',
-  nodeFill: '#FFFFFF',
+  nodeStroke: '#1a1a1a',
+  nodeFill: '#ffffff',
   start: '#E69F00',
   dest: '#CC79A7',
-  defaultEdge: '#999999',
-  currentTour: '#56B4E9',
-  bestTour: '#009E73',
-  explored: '#D55E00',
-  pruned: '#777777',
-  currentNode: '#F0E442',
-  text: '#111111',
+  defaultEdge: '#9ca3af',
+  currentTour: '#2563eb',
+  bestTour: '#059669',
+  explored: '#c2410c',
+  pruned: '#6b7280',
+  currentNode: '#facc15',
+  text: '#111827',
+  labelBg: 'rgba(255, 255, 255, 0.92)',
+  labelBorder: 'rgba(0, 0, 0, 0.12)',
 };
 
 function drawEdges(
   ctx: CanvasRenderingContext2D,
-  edges: Array<{ a: number; b: number; color: string; width: number; dash?: number[] }>,
+  edges: ReadonlyArray<{ a: number; b: number; color: string; width: number; dash?: number[] }>,
   layout: Layout,
   animated: ReadonlyMap<string, number>,
 ): void {
@@ -45,6 +48,57 @@ function drawEdges(
   }
 }
 
+function drawEdgeWeights(
+  ctx: CanvasRenderingContext2D,
+  graph: Graph,
+  layout: Layout,
+  showLabels: boolean,
+  highlight: ReadonlySet<string>,
+): void {
+  if (!showLabels) return;
+  const n = graph.n;
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a = layout.get(i);
+      const b = layout.get(j);
+      if (!a || !b) continue;
+      const w = cost(graph, i, j);
+      const isHighlight = highlight.has(`${i}-${j}`) || highlight.has(`${j}-${i}`);
+      drawWeightLabel(ctx, a, b, w, isHighlight);
+    }
+  }
+}
+
+function drawWeightLabel(
+  ctx: CanvasRenderingContext2D,
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  weight: number,
+  highlight: boolean,
+): void {
+  const mx = (a.x + b.x) / 2;
+  const my = (a.y + b.y) / 2;
+  const label = String(Math.round(weight));
+  ctx.save();
+  ctx.font = `${highlight ? '600 ' : '500 '}10px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const metrics = ctx.measureText(label);
+  const padX = 3;
+  const w = metrics.width + padX * 2;
+  const h = 12;
+  ctx.fillStyle = COLORS.labelBg;
+  ctx.strokeStyle = highlight ? COLORS.bestTour : COLORS.labelBorder;
+  ctx.lineWidth = highlight ? 1.5 : 1;
+  ctx.beginPath();
+  ctx.rect(mx - w / 2, my - h / 2, w, h);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = highlight ? COLORS.bestTour : COLORS.text;
+  ctx.fillText(label, mx, my + 0.5);
+  ctx.restore();
+}
+
 function drawNodes(
   ctx: CanvasRenderingContext2D,
   n: number,
@@ -64,10 +118,10 @@ function drawNodes(
     const isDest = i === dest;
     let fill = COLORS.nodeFill;
     const stroke = COLORS.nodeStroke;
-    let radius = 8;
+    let radius = 9;
     if (isCurrent) {
       fill = COLORS.currentNode;
-      radius = 10;
+      radius = 11;
     } else if (isStart) {
       fill = COLORS.start;
     } else if (isDest) {
@@ -87,12 +141,12 @@ function drawNodes(
       ctx.arc(pos.x, pos.y, radius + 4 + Math.sin(pulse) * 2, 0, Math.PI * 2);
       ctx.strokeStyle = COLORS.currentNode;
       ctx.lineWidth = 2;
-      ctx.globalAlpha = 0.5;
+      ctx.globalAlpha = 0.55;
       ctx.stroke();
       ctx.globalAlpha = 1;
     }
-    ctx.fillStyle = COLORS.text;
-    ctx.font = '11px system-ui, sans-serif';
+    ctx.fillStyle = isCurrent || isStart || isDest || isVisited ? '#ffffff' : COLORS.text;
+    ctx.font = '600 11px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(i + 1), pos.x, pos.y);
@@ -129,11 +183,18 @@ function drawCurrentTour(
   }
 }
 
+function tourKey(tour: readonly number[] | null, i: number, j: number): string {
+  if (tour === null) return '';
+  if (tour.length > i + 1 && tour[i] === i && tour[i + 1] === j) return `${i}-${j}`;
+  return '';
+}
+
 function drawBestTour(
   ctx: CanvasRenderingContext2D,
   bestTour: readonly number[] | null,
   layout: Layout,
   t: number,
+  highlight: Set<string>,
 ): void {
   if (!bestTour || bestTour.length < 2) return;
   const animated = new Map<string, number>();
@@ -144,6 +205,7 @@ function drawBestTour(
     if (a === undefined || b === undefined) continue;
     const key = `${a}-${b}`;
     animated.set(key, offset);
+    highlight.add(key);
     drawEdges(
       ctx,
       [{ a, b, color: COLORS.bestTour, width: 4, dash: [8, 4] }],
@@ -169,9 +231,7 @@ function drawIdleText(
   ctx.restore();
 }
 
-function drawCurrentNode(
-  currentTour: readonly number[],
-): number | undefined {
+function getCurrentNode(currentTour: readonly number[]): number | undefined {
   return currentTour.length > 0 ? currentTour[currentTour.length - 1] : undefined;
 }
 
@@ -190,7 +250,7 @@ export function GraphCanvas(): JSX.Element {
   const visited = useSimulationStore((s) => s.visitedNodes);
   const status = useSimulationStore((s) => s.status);
 
-  const layout = useLayout(graph?.nodes ?? [], Math.max(1, size.w), Math.max(1, size.h));
+  const layout = useLayout(graph, Math.max(1, size.w), Math.max(1, size.h));
 
   useEffect(() => {
     const el = containerRef.current;
@@ -225,20 +285,23 @@ export function GraphCanvas(): JSX.Element {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size.w, size.h);
       if (!graph) return;
+      const highlight = new Set<string>();
       drawEdges(ctx, buildDefaultEdges(graph.n), layout, new Map());
+      drawEdgeWeights(ctx, graph, layout, true, highlight);
       drawCurrentTour(ctx, currentTour, layout);
-      drawBestTour(ctx, bestTour, layout, t);
+      drawBestTour(ctx, bestTour, layout, t, highlight);
       drawNodes(
         ctx,
         graph.n,
         layout,
         startNode,
         destNode,
-        drawCurrentNode(currentTour),
+        getCurrentNode(currentTour),
         visited,
         t / 200,
       );
       drawIdleText(ctx, status, currentTour.length > 0, size.w, size.h);
+      void tourKey;
     },
     [graph, layout, size.w, size.h, currentTour, bestTour, visited, destNode, status],
   );
