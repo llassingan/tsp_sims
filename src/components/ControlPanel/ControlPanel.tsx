@@ -4,6 +4,7 @@ import { GraphTypeSelect } from './GraphTypeSelect';
 import { ProblemTypeSelect } from './ProblemTypeSelect';
 import { DestinationSelect } from './DestinationSelect';
 import { WeightRangeInput } from './WeightRangeInput';
+import { WeightModeSelect } from './WeightModeSelect';
 import { SeedInput } from './SeedInput';
 import { PresetButtons } from './PresetButtons';
 import { StartButton } from './StartButton';
@@ -17,6 +18,7 @@ export function ControlPanel(): JSX.Element {
       <GraphTypeSelect />
       <ProblemTypeSelect />
       <DestinationSelect />
+      <WeightModeSelect />
       <WeightRangeInput />
       <SeedInput />
       <PresetButtons />

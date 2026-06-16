@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { AlgorithmId, AlgorithmStep } from '@/algorithms/types';
 import type { Graph } from '@/lib/graph/types';
+import type { WeightMode } from '@/lib/graph/generate';
 
 export type Status = 'idle' | 'generating' | 'ready' | 'running' | 'paused' | 'completed' | 'error';
 
@@ -13,6 +14,7 @@ export interface SimulationConfig {
   weightMin: number;
   weightMax: number;
   seed: number;
+  weightMode: WeightMode;
 }
 
 export interface SimulationState {
@@ -77,6 +79,7 @@ const initialState: Omit<
     weightMin: 1,
     weightMax: 20,
     seed: 42,
+    weightMode: 'euclidean',
   },
   graph: null,
   status: 'idle',

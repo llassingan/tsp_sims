@@ -31,6 +31,7 @@ export function StartButton(): JSX.Element {
       type: config.graphType,
       weightRange: [config.weightMin, config.weightMax],
       seed: config.seed,
+      weightMode: config.weightMode,
     });
     setGraph(g);
     startRun(newRunId());
