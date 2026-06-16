@@ -81,4 +81,90 @@ describe('generateGraph', () => {
     }
     expect(count).toBe(45);
   });
+
+  it('euclidean: closest pair gets min weight, farthest gets max weight', () => {
+    const [wmin, wmax] = [4, 80];
+    const g = generateGraph({
+      n: 12,
+      type: 'symmetric',
+      weightRange: [wmin, wmax],
+      seed: 11,
+      rng: createRng(11),
+      weightMode: 'euclidean',
+    });
+    let minObserved = Number.POSITIVE_INFINITY;
+    let maxObserved = 0;
+    for (let i = 0; i < g.n; i++) {
+      for (let j = i + 1; j < g.n; j++) {
+        const d = Math.sqrt(
+          (g.nodes[i]!.x - g.nodes[j]!.x) ** 2 +
+            (g.nodes[i]!.y - g.nodes[j]!.y) ** 2,
+        );
+        if (d === Math.min(...pairwiseDists(g))) minObserved = Math.min(minObserved, g.weights[i * g.n + j]!);
+        if (d === Math.max(...pairwiseDists(g))) maxObserved = Math.max(maxObserved, g.weights[i * g.n + j]!);
+      }
+    }
+    expect(minObserved).toBe(wmin);
+    expect(maxObserved).toBe(wmax);
+  });
+
+  it('euclidean: weights monotonic with distance', () => {
+    const g = generateGraph({
+      n: 10,
+      type: 'symmetric',
+      weightRange: [1, 100],
+      seed: 13,
+      rng: createRng(13),
+      weightMode: 'euclidean',
+    });
+    const pairs: Array<{ d: number; w: number }> = [];
+    for (let i = 0; i < g.n; i++) {
+      for (let j = i + 1; j < g.n; j++) {
+        const d = Math.sqrt(
+          (g.nodes[i]!.x - g.nodes[j]!.x) ** 2 +
+            (g.nodes[i]!.y - g.nodes[j]!.y) ** 2,
+        );
+        pairs.push({ d, w: g.weights[i * g.n + j]! });
+      }
+    }
+    pairs.sort((a, b) => a.d - b.d);
+    for (let i = 1; i < pairs.length; i++) {
+      expect(pairs[i]!.w).toBeGreaterThanOrEqual(pairs[i - 1]!.w);
+    }
+  });
+
+  it('euclidean: same seed → byte-identical graph', () => {
+    const a = generateGraph({
+      n: 8,
+      type: 'symmetric',
+      weightRange: [1, 20],
+      seed: 42,
+      weightMode: 'euclidean',
+    });
+    const b = generateGraph({
+      n: 8,
+      type: 'symmetric',
+      weightRange: [1, 20],
+      seed: 42,
+      weightMode: 'euclidean',
+    });
+    for (let i = 0; i < a.weights.length; i++) {
+      expect(a.weights[i]).toBe(b.weights[i]);
+    }
+  });
 });
+
+function pairwiseDists(g: { nodes: ReadonlyArray<{ x: number; y: number }> }): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < g.nodes.length; i++) {
+    for (let j = i + 1; j < g.nodes.length; j++) {
+      out.push(
+        Math.sqrt(
+          (g.nodes[i]!.x - g.nodes[j]!.x) ** 2 +
+            (g.nodes[i]!.y - g.nodes[j]!.y) ** 2,
+        ),
+      );
+    }
+  }
+  return out;
+}
