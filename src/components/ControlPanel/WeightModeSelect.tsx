@@ -1,7 +1,31 @@
+/**
+ * WeightModeSelect — Chooses how edge weights are derived for random graphs.
+ *
+ *   - Euclidean: weights are computed from 2D Euclidean distance between
+ *     randomly-placed node positions. This produces realistic, metric graphs
+ *     where far-apart nodes naturally have higher cost. The triangle
+ *     inequality holds, which can help B&B pruning.
+ *
+ *   - Random: weights are drawn uniformly from the [weightMin, weightMax]
+ *     range. This produces non-metric graphs where edges are independent
+ *     (no triangle inequality guarantee). Useful for testing algorithms
+ *     on arbitrary cost matrices.
+ *
+ * Has a "?" tooltip circle with a detailed explanation so users understand
+ * the trade-off without reading documentation.
+ */
+
 import { useSimulationStore } from '@/store/simulationStore';
 import type { WeightMode } from '@/lib/graph/generate';
 import { Tooltip } from '@/components/ui/Tooltip';
 
+/**
+ * WeightModeSelect — Euclidean (position-derived) vs Random (uniform) weights.
+ *
+ * Uses inline radio buttons styled as toggle pills instead of the shared
+ * RadioGroup because this component includes a custom Tooltip in the legend
+ * that explains the mode distinction to users.
+ */
 export function WeightModeSelect(): JSX.Element {
   const weightMode = useSimulationStore((s) => s.config.weightMode);
   const setConfig = useSimulationStore((s) => s.setConfig);

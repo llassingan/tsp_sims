@@ -1,3 +1,35 @@
+/**
+ * App.tsx — TSP Simulator Application Shell
+ *
+ * Three-pane layout rendered as a CSS Grid:
+ *
+ *   ┌────────────── Header (48px, spans all 3 columns) ──────────────┐
+ *   │  Title "TSP Simulator"                         Status badge     │
+ *   ├──────────┬──────────────────────────────┬───────────────────────┤
+ *   │ Controls │       Visualizer             │    Statistics         │
+ *   │ (320px)  │       (flex-1)              │    (360px)            │
+ *   │          │                              │                       │
+ *   │  Presets │  ┌──────────────────────┐    │  Complexity           │
+ *   │  Config  │  │  GraphCanvas or      │    │  Wall Time            │
+ *   │  Start   │  │  GraphCanvas3D       │    │  Metrics Grid         │
+ *   │          │  │  (lazy + Suspense)   │    │  Progress Bar         │
+ *   │          │  └──────────────────────┘    │                       │
+ *   └──────────┴──────────────────────────────┴───────────────────────┘
+ *
+ * Key behaviors:
+ *   - 3D view (GraphCanvas3D) is lazy-loaded via React.lazy with a
+ *     Suspense fallback to the 2D GraphCanvas while the Three.js chunk
+ *     downloads.
+ *   - useRunOrchestrator hook bridges the Web Worker to the Zustand
+ *     store, coordinating Start/Stop/Pause lifecycle.
+ *   - useKeyboardShortcuts hook enables Space to toggle run, Escape to
+ *     stop, R to random graph.
+ *   - Error messages are displayed as a red alert banner positioned
+ *     absolutely in the visualizer pane.
+ *
+ * @module App
+ */
+
 import { lazy, Suspense } from 'react';
 import { ControlPanel } from './components/ControlPanel/ControlPanel';
 import { GraphCanvas } from './components/GraphVisualizer/GraphCanvas';
@@ -7,10 +39,15 @@ import { useRunOrchestrator } from './hooks/useRunOrchestrator';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useSimulationStore } from './store/simulationStore';
 
+/** Lazy-loaded 3D graph renderer — defers the ~500KB Three.js chunk. */
 const GraphCanvas3D = lazy(() =>
   import('./components/GraphVisualizer/GraphCanvas3D').then((m) => ({ default: m.GraphCanvas3D })),
 );
 
+/**
+ * Root application component. Wires the orchestration hooks, renders the
+ * three-pane layout, and manages the 2D/3D view mode toggle.
+ */
 export default function App(): JSX.Element {
   useRunOrchestrator();
   useKeyboardShortcuts();

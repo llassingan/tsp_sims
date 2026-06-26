@@ -1,6 +1,27 @@
+/**
+ * ViewModeSelect — Toggle between 2D canvas and 3D Three.js rendering.
+ *
+ *   - 2D: flat HTML5 Canvas rendering with minimal overhead. Best for
+ *         quick iteration and lightweight graphs.
+ *   - 3D: Three.js scene with an orbit camera supporting pinch/drag/zoom.
+ *         Best for larger graphs where depth perception helps and for
+ *         a more immersive visualization experience.
+ *
+ * Has a "?" tooltip circle explaining the camera interaction model ("2D:
+ * flat canvas. 3D: Three.js scene with pinch/drag orbit camera.") so users
+ * know what to expect before switching modes.
+ */
+
 import { useSimulationStore } from '@/store/simulationStore';
 import { Tooltip } from '@/components/ui/Tooltip';
 
+/**
+ * ViewModeSelect — 2D Canvas vs 3D Three.js rendering mode.
+ *
+ * Uses inline toggle pills (like WeightModeSelect) with a custom Tooltip
+ * in the legend. The `satisfies` keyword is not needed here because the
+ * value is a plain string union ('2d' | '3d') that matches the store type.
+ */
 export function ViewModeSelect(): JSX.Element {
   const viewMode = useSimulationStore((s) => s.config.viewMode);
   const setConfig = useSimulationStore((s) => s.setConfig);

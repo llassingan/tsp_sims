@@ -1,5 +1,23 @@
+/**
+ * StatusOverlay.tsx — Floating Status Indicator
+ *
+ * Renders a contextual overlay on top of the graph visualizer.
+ * Behavior by simulation status:
+ *
+ *   - `idle`   (no graph)   : "Click a preset or Start to generate a graph"
+ *   - `ready`               : "Ready — press Start or Space"
+ *   - `completed`           : Shows best cost in a green badge
+ *   - `running` / `error`   : Hidden (other UI handles these states)
+ *
+ * @module StatusOverlay
+ */
+
 import { useSimulationStore } from '@/store/simulationStore';
 
+/**
+ * Floating overlay that shows contextual status messages for the visualizer.
+ * Hidden during active simulation or error states.
+ */
 export function StatusOverlay(): JSX.Element | null {
   const status = useSimulationStore((s) => s.status);
   const bestCost = useSimulationStore((s) => s.bestCost);

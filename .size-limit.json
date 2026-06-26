@@ -1,3 +1,13 @@
+// Bundle size budget for the TSP Simulator POC — enforced by @size-limit.
+// Each entry declares a bundle glob, a gzipped max size, and whether to measure
+// gzip vs raw size. The budgets are deliberately tight for a POC: the simulator
+// should load fast on slow connections and feel snappy even on a staging deploy
+// with no CDN.
+//
+//   - Main JS bundle ≤ 250 KB gzipped — TSP algorithm logic, React components,
+//     d3-force, Three.js, Zustand state, and all UI code must fit in this budget.
+//   - Main CSS bundle ≤ 20 KB gzipped — Tailwind utility classes plus any custom
+//     styles for the simulator canvas and control panel.
 [
   {
     "name": "Main JS bundle (gzip)",

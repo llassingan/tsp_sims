@@ -1,3 +1,35 @@
+/**
+ * ESLint flat configuration for the TSP Simulator POC.
+ *
+ * Architecture (5 config objects in order of descending specificity):
+ *
+ * 1. Global ignores — build artifacts, generated reports, server/scripts helpers,
+ *    and config files that self-lint would produce false positives on.
+ *
+ * 2. Base rulesets — `@eslint/js` recommended (core JS best practices) layered
+ *    with `typescript-eslint` recommended-type-checked (security-sensitive rules)
+ *    and stylistic-type-checked (formatting consistency).
+ *
+ * 3. Application source (`**\/*.{ts,tsx}` excluding configs) — the strictest tier:
+ *    - react-hooks: enforces the Rules of Hooks (no conditional useEffect, etc.).
+ *    - react-refresh: warns when a file exports anything other than components,
+ *      keeping Fast Refresh compatible.
+ *    - jsx-a11y: accessibility checks on JSX (alt text, aria attributes, etc.)
+ *      because the simulator UI should be usable by screen-reader users.
+ *    - Custom rules: no-any (error), eqeqeq (always ===), complexity ≤ 12,
+ *      max 50 lines per function, max 4 parameters, no console.log (only warn/error
+ *      allowed), no implicit coercion, no forbidden syntax (for-in, with, eval).
+ *
+ * 4. Config files, worker files, and test files — relaxed tier. Test helpers need
+ *    console output for debugging; configs and workers deal with loosely-typed
+ *    plugin APIs where unsafe-* rules produce unavoidable noise.
+ *
+ * 5. Algorithm files (`src/algorithms/**`) — relaxed tier. TSP algorithm
+ *    implementations are inherently complex (recursive DFS, DP table iteration)
+ *    and cannot reasonably fit into max-lines-per-function or complexity limits.
+ *    Similarly, generator-based algorithms need more than 4 parameters for
+ *    state tracking.
+ */
 // @ts-check
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';

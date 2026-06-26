@@ -1,3 +1,15 @@
+// Knip dead-code detection for the TSP Simulator POC.
+// Knip scans the project starting from the declared entry points and flags
+// any file or export that is not reachable from those roots — preventing
+// dead code from accumulating across iterations.
+//
+// Entry points: main application bootstrap (main.tsx) and the Web Worker bundle
+// (algorithm.worker.ts). All other source files must be transitively imported
+// from one of these two roots, otherwise they are candidates for deletion.
+//
+// Ignored: test files (imported by vitest at runtime, not statically),
+// config files (loaded by tooling), and the server/ directory (standalone
+// Express server, not part of the client bundle).
 {
   "entry": ["src/main.tsx", "src/workers/algorithm.worker.ts"],
   "project": ["src/**/*.ts", "src/**/*.tsx"],

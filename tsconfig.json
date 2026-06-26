@@ -1,3 +1,9 @@
+// Root TypeScript project-references configuration for the TSP Simulator POC.
+// This file does not compile any source code directly. Instead it delegates to two
+// child project configurations via TypeScript's composite build mode:
+//   - tsconfig.app.json  — application source (React components, algorithms, workers)
+//   - tsconfig.node.json — Node-side tooling configs (vite, vitest, playwright, eslint)
+// Running `tsc -b` from the root builds both projects and increments their tsbuildinfo.
 {
   "files": [],
   "references": [

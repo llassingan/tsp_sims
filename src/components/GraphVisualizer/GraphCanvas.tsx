@@ -1,8 +1,42 @@
+/**
+ * GraphCanvas.tsx — 2D Canvas TSP Graph Visualizer
+ *
+ * The primary visualization surface for the TSP simulator. Renders the
+ * graph as a 2D HTML Canvas with a per-frame draw loop driven by
+ * requestAnimationFrame.
+ *
+ * Visual layers (drawn back-to-front each frame):
+ *   1. Default edges     — dashed gray lines for the complete graph skeleton
+ *   2. Edge weight labels — numeric weights at edge midpoints; highlighted
+ *                           when the edge belongs to the best tour
+ *   3. Current tour      — thick solid blue lines showing the solver's
+ *                           active exploration path
+ *   4. Best tour         — thick dashed green lines with marching-ants
+ *                           animation (dash-offset translates over time)
+ *   5. Nodes             — filled circles with state-dependent coloring:
+ *       - Default  : white fill, dark stroke
+ *       - Start    : orange (#E69F00)
+ *       - Dest     : pink (#CC79A7)
+ *       - Current  : yellow (#FACC15) with animated pulse ring
+ *       - Visited  : explored-orange (#C2410C)
+ *   6. Idle text        — "Click Start to begin" in idle/ready states
+ *
+ * Color scheme is the Wong 8-color color-blind safe palette, adapted for
+ * TSP semantic roles.
+ *
+ * Handles HiDPI displays by scaling the canvas buffer to devicePixelRatio
+ * while keeping CSS dimensions at 1:1 logical pixels. Canvas size is kept
+ * in sync with the container via ResizeObserver.
+ *
+ * @module GraphCanvas
+ */
+
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSimulationStore } from '@/store/simulationStore';
 import { cost, type Graph } from '@/lib/graph/types';
 import { useLayout, type Layout } from './useLayout';
 
+/** Wong color-blind safe palette adapted for TSP visualization. */
 const COLORS = {
   nodeStroke: '#1a1a1a',
   nodeFill: '#ffffff',
@@ -19,6 +53,16 @@ const COLORS = {
   labelBorder: 'rgba(0, 0, 0, 0.12)',
 };
 
+/**
+ * Draws a batch of edges with shared styling. Handles dashed lines,
+ * animated dash offset (for marching-ants on best-tour edges), and
+ * skips edges whose endpoints aren't positioned.
+ *
+ * @param ctx      - Canvas 2D rendering context.
+ * @param edges    - Edge descriptors with endpoint ids, color, width, dash.
+ * @param layout   - Node position lookup.
+ * @param animated  - Dash-offset overrides per edge key for marching ants.
+ */
 function drawEdges(
   ctx: CanvasRenderingContext2D,
   edges: ReadonlyArray<{ a: number; b: number; color: string; width: number; dash?: number[] }>,
@@ -48,6 +92,17 @@ function drawEdges(
   }
 }
 
+/**
+ * Draws numeric edge-weight labels at the midpoint of every edge in the
+ * complete graph. Labels are drawn as small rectangles with semi-transparent
+ * fill for readability. Labels on best-tour edges receive highlight styling.
+ *
+ * @param ctx        - Canvas 2D rendering context.
+ * @param graph      - The graph data (provides edge weights).
+ * @param layout     - Node position lookup.
+ * @param showLabels - Whether labels should be drawn at all.
+ * @param highlight  - Set of edge keys ("i-j") that should be highlighted.
+ */
 function drawEdgeWeights(
   ctx: CanvasRenderingContext2D,
   graph: Graph,
@@ -99,6 +154,28 @@ function drawWeightLabel(
   ctx.restore();
 }
 
+/**
+ * Draws all graph nodes as filled circles with optional state-dependent
+ * coloring. Each node's label (1-indexed id) is centered inside.
+ *
+ * Node states (priority order: current > start > dest > visited > default):
+ *   - default : white fill, dark stroke
+ *   - start   : orange fill, white text
+ *   - dest    : pink fill, white text
+ *   - current : yellow fill, enlarged radius, pulsing outer ring
+ *   - visited : explored-orange fill, white text
+ *
+ * The pulse ring uses a sinusoidal scale/opacity animation driven by the
+ * `pulse` parameter (typically derived from rAF elapsed time).
+ *
+ * @param n       - Number of nodes in the graph.
+ * @param layout  - Node position lookup.
+ * @param start   - Index of the start node.
+ * @param dest    - Index of the destination node (path mode) or undefined.
+ * @param current - Index of the current node (last in the current tour).
+ * @param visited - Set of visited node indices.
+ * @param pulse   - Phase value for the pulse-ring animation.
+ */
 function drawNodes(
   ctx: CanvasRenderingContext2D,
   n: number,
@@ -153,6 +230,14 @@ function drawNodes(
   }
 }
 
+/**
+ * Builds the default edge list for the complete graph skeleton.
+ * Every edge is a dashed gray line (color: COLORS.defaultEdge, dash: [2, 3])
+ * connecting every pair of nodes (i, j) where i < j.
+ *
+ * @param n - Number of nodes; returns n*(n-1)/2 edges.
+ * @returns Array of edge descriptors with endpoint indices, color, width, dash.
+ */
 function buildDefaultEdges(n: number): Array<{
   a: number;
   b: number;
@@ -169,6 +254,14 @@ function buildDefaultEdges(n: number): Array<{
   return edges;
 }
 
+/**
+ * Draws the current (exploration-in-progress) tour as thick solid blue lines.
+ * Each consecutive pair in `currentTour` gets a solid edge in COLORS.currentTour
+ * with lineWidth 3.
+ *
+ * @param currentTour - Ordered node sequence of the active exploration path.
+ * @param layout      - Node position lookup.
+ */
 function drawCurrentTour(
   ctx: CanvasRenderingContext2D,
   currentTour: readonly number[],
@@ -189,6 +282,20 @@ function tourKey(tour: readonly number[] | null, i: number, j: number): string {
   return '';
 }
 
+/**
+ * Draws the best tour found so far as thick dashed green lines with a
+ * marching-ants animation. The dash-offset cycles over time (t/8 % 16)
+ * to create a flowing directional effect along the tour edges.
+ *
+ * Each edge is drawn individually so its animated dash offset propagates
+ * correctly. Edges are also added to the `highlight` set so edge-weight
+ * labels on the best tour receive highlight styling.
+ *
+ * @param bestTour  - Best tour node sequence (or null if none found).
+ * @param layout    - Node position lookup.
+ * @param t         - Elapsed animation time in ms (drives marching ants).
+ * @param highlight - Set mutated in-place; best-tour edge keys are added.
+ */
 function drawBestTour(
   ctx: CanvasRenderingContext2D,
   bestTour: readonly number[] | null,
@@ -215,6 +322,15 @@ function drawBestTour(
   }
 }
 
+/**
+ * Draws an idle-state message centered on the canvas. Only renders when
+ * the simulator is in `idle` status, or `ready` status with no active tour.
+ *
+ * @param status     - Current simulation status string.
+ * @param hasCurrent - Whether the currentTour is non-empty.
+ * @param w          - Canvas width in logical pixels.
+ * @param h          - Canvas height in logical pixels.
+ */
 function drawIdleText(
   ctx: CanvasRenderingContext2D,
   status: string,
@@ -235,6 +351,12 @@ function getCurrentNode(currentTour: readonly number[]): number | undefined {
   return currentTour.length > 0 ? currentTour[currentTour.length - 1] : undefined;
 }
 
+/**
+ * Renders the 2D TSP graph on an HTML Canvas. Sets up a ResizeObserver to
+ * track container size, scales the canvas buffer for HiDPI via
+ * devicePixelRatio, and runs a per-frame rAF draw loop that composites
+ * all visual layers.
+ */
 export function GraphCanvas(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

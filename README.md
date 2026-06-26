@@ -1,5 +1,24 @@
 # TSP Simulator
 
+<!--
+  PROJECT OVERVIEW:
+  This is a Proof-of-Concept (POC) browser-based simulator for the Traveling
+  Salesman Problem (TSP). It runs 4 classical algorithms inside a Web Worker
+  and animates their solution-space exploration on a Canvas or Three.js view.
+
+  KEY READING ORDER for new contributors:
+  1. This README — quickstart and overview
+  2. tsp-simulator.md — the full design/architecture document (600 lines)
+  3. tsp-simulator-backlog.md — the task-by-task implementation plan for LLM agents
+  4. src/algorithms/ — the core algorithm library (pure functions, no UI)
+  5. src/store/simulationStore.ts — Zustand state management (single source of truth)
+  6. src/workers/ — Web Worker bridge for non-blocking computation
+  7. src/components/ — React UI components (ControlPanel, GraphVisualizer, StatisticsPanel)
+
+  The project enforces strict TypeScript, ESLint with strict-type-checked,
+  and a 250 KB gzipped bundle budget. See tsp-simulator.md §10 for quality gates.
+-->
+
 Animated simulator for the Traveling Salesman Problem (TSP) and its Hamiltonian-path variant. Visualizes four algorithms — Brute Force, Branch & Bound, Held–Karp DP, and Nearest Neighbor — exploring the solution space step-by-step.
 
 ## Quickstart

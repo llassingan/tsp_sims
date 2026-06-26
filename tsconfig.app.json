@@ -1,3 +1,24 @@
+// Application-side TypeScript configuration for the TSP Simulator POC.
+// Covers all source code under `src/` plus `tests/unit/` and `tests/integration/`.
+//
+// Strictness — the project uses `strict:true` (enabling all strict family flags)
+// plus three additional pedantic checks:
+//   - noUncheckedIndexedAccess — catches `obj[key]` without explicit `undefined` guard
+//   - exactOptionalPropertyTypes — forbids assigning `undefined` to optional TSP config props
+//   - verbatimModuleSyntax — prevents import elision surprises with type-only exports
+//
+// Module system — `moduleResolution: "bundler"` is the Vite-compatible resolution mode
+// that understands package.json `exports` maps and allows extensionless imports.
+// `verbatimModuleSyntax` (on) paired with `isolatedModules` ensures every file is
+// viable for single-file transpilation by esbuild (Vite dev mode) and swc (testing).
+//
+// JSX — `react-jsx` is the React 17+ automatic runtime, avoiding the need to
+// manually import React in every TSX file.
+//
+// Target — ES2022 drops async/await downleveling and top-level await restrictions,
+// which matters for Web Worker files that use `await import(...)` for lazy loading.
+//
+// Path alias — `@/*` maps to `src/*`, mirrored in `vite.config.ts` and `vitest.config.ts`.
 {
   "compilerOptions": {
     "composite": true,

@@ -1,8 +1,25 @@
+/**
+ * ComplexityCard.tsx — Algorithm Complexity Display
+ *
+ * Shows the worst-case time and space complexity (Big-O notation) for the
+ * currently selected algorithm. Non-optimal algorithms (e.g. Nearest
+ * Neighbor) display a "Heuristic" badge.
+ *
+ * Data is sourced from the ALGORITHMS registry and formatted via
+ * formatBigO() from @/lib/complexity.
+ *
+ * @module ComplexityCard
+ */
+
 import { useSimulationStore } from '@/store/simulationStore';
 import { ALGORITHMS } from '@/algorithms';
 import { formatBigO } from '@/lib/complexity';
 import { Tooltip } from '@/components/ui/Tooltip';
 
+/**
+ * Displays time and space complexity for the selected algorithm.
+ * Shows a "Heuristic" badge when the algorithm is not guaranteed optimal.
+ */
 export function ComplexityCard(): JSX.Element {
   const algorithmId = useSimulationStore((s) => s.config.algorithmId);
   const algo = ALGORITHMS[algorithmId];

@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!--
+      Entry HTML for the TSP Simulator POC — the single-page app shell.
+
+      - viewport meta: sets initial-scale=1.0 so the simulator canvas and control
+        panels render at the correct pixel density on high-DPI (Retina/HiDPI) screens.
+      - root div: the React 18 `createRoot` mount point. Vite injects the bundled
+        JS and CSS automatically during dev/build.
+      - module script: imports `src/main.tsx` as native ESM. Vite's dev server
+        transpiles it on the fly; the production build replaces it with hashed
+        chunks in `dist/`.
+    -->
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

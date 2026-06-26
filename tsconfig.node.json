@@ -1,3 +1,14 @@
+// Node-side TypeScript configuration for the TSP Simulator POC.
+// Covers build/tooling config files (vite, vitest, playwright, tailwind, postcss, eslint)
+// and Playwright E2E test specs.
+//
+// Uses the ES2023 standard library (includes `Array.prototype.toSorted`, `findLast`,
+// and other recent additions available in Node 20+). Target remains ES2022 for
+// compatibility with the lowest CI Node version.
+//
+// `moduleResolution: "bundler"` is used because Vite/Vitest consume these configs
+// directly as native ESM, so Node-style resolution won't work for extensionless
+// imports and package.json export maps.
 {
   "compilerOptions": {
     "composite": true,

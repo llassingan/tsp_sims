@@ -1,11 +1,44 @@
+/**
+ * Button — Reusable action button primitive for the TSP Simulator.
+ *
+ * Provides three semantic variants mapped to the Wong palette design tokens
+ * so call-to-actions feel intentional throughout the 3-pane layout.
+ *   - primary   -> green  (bg-tsp-bestTour) for affirmative actions like Start
+ *   - secondary -> blue   (bg-tsp-currentTour) for secondary actions like Reset
+ *   - ghost     -> transparent with hover bg, for low-emphasis actions like Presets
+ *
+ * Two sizes (sm / md) cover compact preset buttons and full-width CTA buttons
+ * respectively. The loading state swaps the children with a CSS-only spinner
+ * so there is zero layout shift when toggling between idle and loading.
+ */
+
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
+/**
+ * Semantic variant of the button.
+ * - `primary`   — green, high-emphasis CTA
+ * - `secondary` — blue, medium-emphasis action (e.g. Reset)
+ * - `ghost`     — transparent, low-emphasis (e.g. preset quick-load)
+ */
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+
+/**
+ * Physical size preset for the button.
+ * - `sm` — compact, used in preset rows
+ * - `md` — standard, used for standalone actions
+ */
 export type ButtonSize = 'sm' | 'md';
 
+/**
+ * Props for the Button component.
+ * Extends native button attributes so consumers can pass onClick, title, etc.
+ */
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Visual style variant. Defaults to 'primary'. */
   readonly variant?: ButtonVariant;
+  /** Size preset. Defaults to 'md'. */
   readonly size?: ButtonSize;
+  /** When true, shows an inline CSS spinner and disables the button. */
   readonly loading?: boolean;
   readonly children: ReactNode;
 }
@@ -21,6 +54,13 @@ const sizeClass: Record<ButtonSize, string> = {
   md: 'px-3 py-2 text-sm',
 };
 
+/**
+ * Button — Reusable button with variant, size, and loading states.
+ *
+ * The loading spinner uses a simple `●` character with `animate-spin` so it
+ * works without an icon library or SVG. It is placed inline before children
+ * to avoid shifting the button text when toggled.
+ */
 export function Button({
   variant = 'primary',
   size = 'md',
@@ -38,6 +78,7 @@ export function Button({
       disabled={isDisabled}
       {...rest}
     >
+      {/* CSS-only spinning dot — no icon dependency */}
       {loading ? <span className="mr-1 animate-spin">●</span> : null}
       {children}
     </button>

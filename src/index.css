@@ -1,3 +1,31 @@
+/**
+ * index.css — Global Styles & Animations
+ *
+ * Layer 1 — Tailwind directives (@tailwind base/components/utilities)
+ *         The project uses Tailwind for utility-first styling. Custom theme
+ *         tokens (tsp-currentTour, tsp-bestTour, tsp-explored, etc.) are
+ *         defined in tailwind.config.ts and referenced via classes like
+ *         bg-tsp-bestTour or text-tsp-explored.
+ *
+ * Layer 2 — Full-height reset
+ *         html, body, and #root are set to height: 100% with zero margin/padding
+ *         so the grid layout in App.tsx fills the entire viewport.
+ *
+ * Layer 3 — System font stack
+ *         Uses the native OS font for zero-latency rendering. Falls back through
+ *         -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, and Noto Sans
+ *         before landing on any available sans-serif.
+ *
+ * Layer 4 — Animations
+ *         pulse-ring: Expanding/fading ring drawn around the current node in
+ *                     the 2D canvas (GraphCanvas.tsx). Used via .pulse-ring class.
+ *         marching-ants: Dashed-line offset animation for best-tour edges in
+ *                        the 2D canvas, creating a directional "flow" effect.
+ *                        Used via .marching-ants class.
+ *
+ * @module index.css
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -1,3 +1,36 @@
+/**
+ * GraphCanvas3D.tsx — Three.js 3D TSP Graph Visualizer
+ *
+ * A WebGL-based 3D renderer for the TSP graph, loaded asynchronously via
+ * React.lazy in App.tsx to avoid bundling Three.js in the initial payload.
+ *
+ * Scene setup (initialized once per mount):
+ *   - PerspectiveCamera at a fixed 3D offset with OrbitControls for
+ *     interactive rotation, zoom, and panning.
+ *   - Ambient light (0.55 intensity) + two directional lights (key + rim)
+ *     for diffuse Lambertian shading.
+ *   - Nodes rendered as MeshLambertMaterial spheres (radius 7, 16x12 segments).
+ *   - Default edges rendered as Line objects with LineBasicMaterial (gray).
+ *   - Current tour rendered as a Line with wireframe blue material.
+ *   - Best tour rendered as a Tube (CatmullRomCurve3, radius 3.5, z-offset
+ *     of +2 for visibility above the node plane).
+ *
+ * Label overlay:
+ *   - A separate 2D canvas is layered on top of the WebGL canvas.
+ *   - Node labels and edge weights are projected from 3D world space to
+ *     2D screen coordinates via projectToScreen().
+ *   - Draw tasks are depth-sorted (furthest-to-nearest) before rendering
+ *     so closer labels paint over further ones.
+ *
+ * Resource management:
+ *   - All Three.js geometries, materials, and the renderer DOM element are
+ *     disposed on unmount to prevent memory leaks.
+ *   - If WebGL context creation fails, the component renders a fallback
+ *     message ("WebGL is not available in this browser").
+ *
+ * @module GraphCanvas3D
+ */
+
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -42,6 +75,11 @@ interface NodePos {
   z: number;
 }
 
+/**
+ * All mutable Three.js resources owned by a single GraphCanvas3D instance.
+ * Stored in a ref so the rAF loop and effect cleanups can access the
+ * renderer, scene, camera, and mesh collections without re-creating them.
+ */
 interface SceneState {
   renderer: THREE.WebGLRenderer;
   scene: THREE.Scene;
@@ -58,6 +96,18 @@ interface SceneState {
   labelCtx: CanvasRenderingContext2D;
 }
 
+/**
+ * Renders the TSP graph as an interactive 3D scene using Three.js.
+ *
+ * On first mount with non-zero dimensions: creates WebGL renderer, scene,
+ * camera, lights, controls, node spheres, default edges, and label overlay.
+ * Subsequent mounts/unmounts are avoided by the sceneRef guard.
+ *
+ * Subsequent effect phases update mesh colors (node states), current tour
+ * line, and best tour tube reactively from the Zustand store.
+ *
+ * Falls back to a static message if the WebGL context cannot be created.
+ */
 export function GraphCanvas3D(): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const [webglFailed, setWebglFailed] = useState(false);
@@ -323,6 +373,12 @@ export function GraphCanvas3D(): JSX.Element {
   );
 }
 
+/**
+ * Constructs a THREE.Line from a tour node sequence and a position map.
+ * Each consecutive pair produces a segment in the line geometry.
+ *
+ * @returns A Line object, or null if the tour has fewer than 2 positioned nodes.
+ */
 function buildTourLineFromMap(
   tour: readonly number[],
   positions: ReadonlyMap<number, NodePos>,
@@ -345,6 +401,17 @@ function buildTourLineFromMap(
 const BEST_TUBE_RADIUS = 3.5;
 const BEST_TUBE_Z_OFFSET = 2;
 
+/**
+ * Builds a 3D tube mesh along the best tour path for high visibility.
+ *
+ * The tube is offset on the z-axis by BEST_TUBE_Z_OFFSET so it floats
+ * above the node/edge plane. A CatmullRom curve interpolates between
+ * tour nodes for a smooth pipe. If the tour is a cycle (first === last),
+ * the curve is closed.
+ *
+ * @returns A Mesh (TubeGeometry + MeshBasicMaterial), or null if the tour
+ *          has fewer than 2 positioned nodes.
+ */
 function buildBestTourTube(
   tour: readonly number[],
   positions: ReadonlyMap<number, NodePos>,
@@ -372,6 +439,13 @@ interface NodeStateSnapshot {
   bestEdgeSet: Set<string>;
 }
 
+/**
+ * Snapshots the current simulation state into data structures used by the
+ * 2D label overlay (node kinds and which edges belong to the best tour).
+ *
+ * @returns An object with a `kinds` array (NodeKind per node) and a
+ *          `bestEdgeSet` (canonical edge keys in "min-max" format).
+ */
 function snapshotNodeStates(
   graphN: number,
   startNode: number,
@@ -406,6 +480,11 @@ interface ProjectedPoint {
   depth: number;
 }
 
+/**
+ * Projects a 3D world-space position to 2D screen coordinates using the
+ * camera's projection matrix. Returns null if the point is outside the
+ * camera frustum (z not in [-1, 1]).
+ */
 function projectToScreen(
   camera: THREE.PerspectiveCamera,
   pos: NodePos,
@@ -475,6 +554,16 @@ interface DrawTask {
   draw: () => void;
 }
 
+/**
+ * Renders all node labels and edge-weight labels onto the 2D overlay canvas.
+ * Steps:
+ *   1. Clear the label canvas.
+ *   2. Snapshot current node states from the Zustand store.
+ *   3. Project every node and every edge midpoint to screen coordinates.
+ *   4. Collect draw tasks with their depth (z) values.
+ *   5. Sort tasks farthest-to-nearest and execute them so closer labels
+ *      paint over farther ones.
+ */
 function drawLabels(
   s: SceneState,
   graph: Graph,
@@ -530,6 +619,11 @@ function drawLabels(
   for (const t of tasks) t.draw();
 }
 
+/**
+ * Recursively disposes all geometries and materials from a Three.js
+ * Object3D subtree. Skips the top-level object's own geometry to avoid
+ * double-disposing shared SphereGeometry.
+ */
 function disposeObject(obj: THREE.Object3D): void {
   obj.traverse((child) => {
     const mesh = child as THREE.Mesh;
